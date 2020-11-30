@@ -23,17 +23,25 @@ void saveCustomImg(QImage image, char* name){
 	return;
 }
 
-void fillinGrayImageimgagearray(int* histo, QImage image)
+void fillinGrayImageimgagearray(int* arr, QImage image)
 {
 
-	for (int indx_row = 0; indx_row < image.height(); indx_row ++)
+	for (int i = 0; i < image.height(); i ++)
 	{
-		QRgb* pnt_row = (QRgb*)image.scanLine(indx_row);
-		for (int indx_col = 0; indx_col < image.width(); indx_col++)
+		// QRgb* pnt_row = (QRgb*)image.scanLine(i);
+		for (int j = 0; j < image.width(); j++)
 		{
 
-			QRgb pixel = pnt_row[indx_col];
-			histo[ image.width() * indx_row + indx_col ] = qGray(pixel); 
+			// QRgb pixel = pnt_row[j];
+			QRgb pixel = image.pixel(j, i);
+			// int red = qRed(pixel);
+			// int green = qGreen(pixel);
+			// int blue = qBlue(pixel);
+
+			// int gray = 0.2989 * red + 0.5870 * green + 0.1140 * blue;			
+			// std::cout << image.width() * i + j << ":\t\t" << qGray(pixel) << "\t" << gray << "\n";
+			// arr[ image.width() * i + j ] = qGray(pixel); 
+			arr[ image.width() * i + j ] = qGray(pixel); 
 		}
 	}
 }
@@ -148,14 +156,15 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 
 QImage createOtsuImg(QImage image )
 {
-	QImage imageOtsu(image.width(), image.height(), QImage::Format_RGB32);
+	// QImage imageOtsu(image.width(), image.height(), QImage::Format_RGB32);
+	QImage imageOtsu(image.width(), image.height(), QImage::Format_Grayscale8);
 
 	/* Prepare image imgagearray */
 	int image_imgagearray[image.width() * image.height()];
 	fillinGrayImageimgagearray(image_imgagearray, image);
 	int image_histogram[255];
 	fillinImageHistogram(image_histogram, 255, image_imgagearray, image.width() * image.height());	
-	int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
+	// int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
 
 
 	for (int indx_row = 0; indx_row < image.height(); indx_row ++)
@@ -167,10 +176,14 @@ QImage createOtsuImg(QImage image )
 			
 			/*calculate otsu value at this index*/
 			QRgb valueOtsuGrey;
-			int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold) ? BLACK : WHITE;
+			// int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold) ? BLACK : WHITE;
+			int otsuValue = image_imgagearray[imgarray_indx];
+
+			QRgb ori = image.pixel(indx_col, indx_row);
 
 			/*print diffs after filtering*/
 			valueOtsuGrey = qRgb(otsuValue, otsuValue, otsuValue);
+			// imageOtsu.setPixel(indx_col, indx_row, ori);
 			imageOtsu.setPixel(indx_col, indx_row, valueOtsuGrey);
 		}
 
@@ -218,12 +231,12 @@ int main(int argc, char *argv[])
 		label.setText("Cannot load image.");
 	}
 	
-	// QImage oneDMedianImg = create1dmedianImg(image);
-	QImage oneDMedianImg = createOtsuImg(image);
-	label.setPixmap(QPixmap::fromImage(oneDMedianImg));
-	// label.show();
+	// QImage otsuImg = create1dmedianImg(image);
+	QImage otsuImg = createOtsuImg(image);
+	label.setPixmap(QPixmap::fromImage(otsuImg));
+	label.show();
 
-	saveCustomImg(oneDMedianImg, "out_1dm.png");
+	saveCustomImg(otsuImg, "out_1dm.png");
 
 
 	QTextStream(stdout) << "\n";
