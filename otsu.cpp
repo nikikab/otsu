@@ -129,6 +129,10 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 
 	 double q2W = 0.0;
 
+	 double sigma2b_tem = 0.0;
+	 int i_maxsigma = 0;
+	 double sigma2b = 0.0;
+
 	 for (int i = 0; i < size; ++i)
 	 {
 
@@ -144,16 +148,16 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 
 	 	}
 	 	Wb = background_pixels / totals;
-	 	mb = background_pixels_multiplied_by_weight / background_pixels;
+	 	mb = background_pixels_multiplied_by_weight / Wb;
 	 	for (int j = 0; j < i; ++j)
 	 	{
 	 		// qb += pow((j - mb), 2) *  image_histogram[j];
-	 		qb2 += pow((j - mb), 2) *  image_histogram[j] / background_pixels;
+	 		qb2 += pow((j - mb), 2) *  image_histogram[j] / Wb;
 	 	}
 	 	// qb2 = qb / background_pixels;
-		std::cout << "Wb: " << Wb << "\t";
-		std::cout << "background_pixels: " << background_pixels << "\t";
-		std::cout << "mb: " << mb << "\t";
+		std::cout << "Wb: " << Wb << "\t\t";
+		std::cout << "backg_pxls: " << background_pixels << "\t\t";
+		std::cout << "mb: " << mb << "\t\t";
 		std::cout << "qb2: " << qb2 << "\n";
 
 
@@ -165,25 +169,32 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 		forground_pixels_multiplied_by_weight += image_histogram[k] * k; 
 	 	}
 	 	Wf = forground_pixels / totals;
-	 	mf = forground_pixels_multiplied_by_weight / forground_pixels;
+	 	mf = forground_pixels_multiplied_by_weight / Wf;
 	 	for (int k = i; k < size; ++k)
 	 	{
 	 		// qf += pow((k - mf), 2) *  image_histogram[k] / forground_pixels;
-	 		qf2 += pow((k - mf), 2) *  image_histogram[k] / forground_pixels;
+	 		qf2 += pow((k - mf), 2) *  image_histogram[k] / Wf;
 	 	}
 	 	// qf2 = qf / forground_pixels;
-		std::cout << "Wf: " << Wf << "\t";
-		std::cout << "forground_pixels: " << forground_pixels << "\t";
-		std::cout << "mf: " << mf << "\t";
-		std::cout << "qf2: " << qf2 << "\t";
+		std::cout << "Wf: " << Wf << "\t\t";
+		std::cout << "forg_pxls: " << forground_pixels << "\t\t";
+		std::cout << "mf: " << mf << "\t\t";
+		std::cout << "qf2: " << qf2 << "\t\t";
 
-		q2W = (Wb * qb2) + (Wf * qf2);
-		std::cout << "\n" << "q2W: " <<  q2W << "\t";
-		 
- 		if (q2W < 0.5)
- 		{
- 			treashold = i;
- 		}	
+		// q2W = (Wb * qb2) + (Wf * qf2);
+		// std::cout << "\n" << "q2W: " <<  q2W << "\t";
+
+		sigma2b = Wb * Wf * pow((mb - mf), 2);
+		if (sigma2b_tem < sigma2b)
+		{
+			sigma2b_tem = sigma2b;
+			i_maxsigma = i;
+		}
+		std::cout << "\n" << "sigma2b_tem: " <<  sigma2b_tem << ";\t" << "i_maxsigma: " << i_maxsigma;
+ 		// if (q2W < 0.5)
+ 		// {
+ 		// 	treashold = i;
+ 		// }	
 
 	 	// set to 0
 	 	qb2 = 0;
@@ -197,6 +208,7 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 		forground_pixels_multiplied_by_weight = 0;
 	 }
 	 
+	 return i_maxsigma;
 	 std::cout << "\n" << "totals: " << totals;
 	 std::cout << "\n" << "treashold: " << treashold;
 }
@@ -211,8 +223,8 @@ QImage createOtsuImg(QImage image )
 	fillinGrayImageimgagearray(image_imgagearray, image);
 	int image_histogram[255];
 	fillinImageHistogram(image_histogram, 255, image_imgagearray, image.width() * image.height());	
-	// int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
-	int otsu_threshold = calculateOtsuTreashold2(image_histogram, 255, image.width() * image.height());
+	int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
+	// int otsu_threshold = calculateOtsuTreashold2(image_histogram, 255, image.width() * image.height());
 
 	for (int i = 0; i < image.height(); i ++)
 	{
