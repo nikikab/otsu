@@ -78,19 +78,19 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 {
 	 int treashold=0; 
 	 double interClassVar=0; 
-	 double Wb=0; //Weight background
-	 double mb=0; //Mean background
-	 double qb=0; //variant background
-	 double qb2=0; //variant background
-	 double Wf=0; //Weight background
-	 double mf=0; //Mean foreground
-	 double qf=0; //Variant forground
-	 double qf2=0; //Variant forground
+	 double Wb=0.0; //Weight background
+	 double mb=0.0; //Mean background
+	 double qb=0.0; //variant background
+	 double qb2=0.0; //variant background
+	 double Wf=0.0; //Weight background
+	 double mf=0.0; //Mean foreground
+	 double qf=0.0; //Variant forground
+	 double qf2=0.0; //Variant forground
 
-	 int background_pixels = 0;
-	 int background_pixels_multiplied_by_weight = 0;
-	 int forground_pixels = 0;
-	 int forground_pixels_multiplied_by_weight = 0;
+	 float background_pixels = 1;
+	 float background_pixels_multiplied_by_weight = 0;
+	 float forground_pixels = 0;
+	 float forground_pixels_multiplied_by_weight = 0;
 	 for (int i = 0; i < size; ++i)
 	 {
 
@@ -112,9 +112,11 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 		qb += pow((j - mb), 2) *  image_histogram[j];
 	 	}
 	 	qb2 = qb / background_pixels;
-		std::cout << "Wb: " << qb << "\t";
+		std::cout << "Wb: " << Wb << "\t";
+		std::cout << "background_pixels: " << background_pixels << "\t";
+		std::cout << "mb: " << mb << "\t";
 		std::cout << "qb: " << qb << "\t";
-		std::cout << "qb2: " << qb2 << "\t";
+		std::cout << "qb2: " << qb2 << "\n";
 
 
 	 	
@@ -125,16 +127,19 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 		forground_pixels_multiplied_by_weight += image_histogram[k] * k; 
 	 	}
 	 	Wf = forground_pixels / totals;
-	 	mf = forground_pixels_multiplied_by_weight += forground_pixels;
+	 	mf = forground_pixels_multiplied_by_weight / forground_pixels;
 	 	for (int k = 0; k < i; ++k)
 	 	{
 	 		qf += pow((k - mf), 2) *  image_histogram[k];
 	 	}
 	 	qf2 = qf / forground_pixels;
-		std::cout << "Wf: " << qf << "\t";
+		std::cout << "Wf: " << Wf << "\t";
+		std::cout << "forground_pixels: " << forground_pixels << "\t";
+		std::cout << "mf: " << mf << "\t";
 		std::cout << "qf: " << qf << "\t";
 		std::cout << "qf2: " << qf2 << "\t";
 
+		std::cout << "q2W: " <<  (Wb * qb2) + (Wf * qf2) << "\t";
 		 
 	 	if (interClassVar < (Wb * qb2) + (Wf * qf2) ) 
 	 	{
@@ -145,12 +150,19 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 		}	
 	 	}   
 
-	 	Wb = 0;
-	 	qb2 = 0;
-	 	Wf = 0;
-	 	qf2 = 0;
+	 	// set to 0
+	 	qb = 0;
+	 	mb = 0;
+	 	qf = 0;
+	 	mf = 0;
+
+		background_pixels = 1;
+		background_pixels_multiplied_by_weight = 0;
+		forground_pixels = 0;
+		forground_pixels_multiplied_by_weight = 0;
 	 }
 	 
+	 std::cout << "\n" << "totals: " << totals;
 	 std::cout << "\n" << "treashold: " << treashold;
 }
 
@@ -164,27 +176,22 @@ QImage createOtsuImg(QImage image )
 	fillinGrayImageimgagearray(image_imgagearray, image);
 	int image_histogram[255];
 	fillinImageHistogram(image_histogram, 255, image_imgagearray, image.width() * image.height());	
-	// int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
+	int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
 
 
-	for (int indx_row = 0; indx_row < image.height(); indx_row ++)
+	for (int i = 0; i < image.height(); i ++)
 	{
-		QRgb* pnt_row = (QRgb*)image.scanLine(indx_row);
-		for (int indx_col = 0; indx_col < image.width(); indx_col++)
+		for (int j = 0; j < image.width(); j++)
 		{
-			int imgarray_indx = indx_row * image.width() + indx_col; 
+			int imgarray_indx = i * image.width() + j; 
 			
 			/*calculate otsu value at this index*/
 			QRgb valueOtsuGrey;
-			// int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold) ? BLACK : WHITE;
+			// int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold ) ? BLACK : WHITE;
 			int otsuValue = image_imgagearray[imgarray_indx];
 
-			QRgb ori = image.pixel(indx_col, indx_row);
-
-			/*print diffs after filtering*/
 			valueOtsuGrey = qRgb(otsuValue, otsuValue, otsuValue);
-			// imageOtsu.setPixel(indx_col, indx_row, ori);
-			imageOtsu.setPixel(indx_col, indx_row, valueOtsuGrey);
+			imageOtsu.setPixel(j, i, valueOtsuGrey);
 		}
 
 
