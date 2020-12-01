@@ -74,6 +74,41 @@ void fillinImageHistogram(int* image_histogram, int histo_size,int*  image_imgag
 	printarray(image_histogram, 250);
 }
 
+int calculateOtsuTreashold2(int* histogram, int size, int totals)
+{
+	int q1, q2;
+	int sum, sumB;
+	double m1, m2;
+	double th2b;
+
+	int threshold;
+	 
+	for (int i = 0; i < 255; ++i)
+	{
+		sum += i * histogram[i];
+	}
+
+	for (int t = 0; t < 255; ++t)
+	{
+		q1 += histogram[t];
+		q2 = totals - q1;
+
+		sumB += t * histogram[t];
+		m1 = sumB / q1;
+		m2 = (sum - sumB) / q2;
+		th2b = q1 *q2 * pow((m1 - m2), 2);
+
+		std::cout << "th2b: " << (double) th2b << "\n"; 
+		if (th2b < 0.5)
+		{
+			threshold = t;
+		}
+
+	}
+
+	return threshold;
+}
+
 int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 {
 	 int treashold=0; 
@@ -91,6 +126,9 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 float background_pixels_multiplied_by_weight = 0;
 	 float forground_pixels = 0;
 	 float forground_pixels_multiplied_by_weight = 0;
+
+	 double q2W = 0.0;
+
 	 for (int i = 0; i < size; ++i)
 	 {
 
@@ -109,13 +147,13 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 	mb = background_pixels_multiplied_by_weight / background_pixels;
 	 	for (int j = 0; j < i; ++j)
 	 	{
-	 		qb += pow((j - mb), 2) *  image_histogram[j];
+	 		// qb += pow((j - mb), 2) *  image_histogram[j];
+	 		qb2 += pow((j - mb), 2) *  image_histogram[j] / background_pixels;
 	 	}
-	 	qb2 = qb / background_pixels;
+	 	// qb2 = qb / background_pixels;
 		std::cout << "Wb: " << Wb << "\t";
 		std::cout << "background_pixels: " << background_pixels << "\t";
 		std::cout << "mb: " << mb << "\t";
-		std::cout << "qb: " << qb << "\t";
 		std::cout << "qb2: " << qb2 << "\n";
 
 
@@ -128,32 +166,29 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 	}
 	 	Wf = forground_pixels / totals;
 	 	mf = forground_pixels_multiplied_by_weight / forground_pixels;
-	 	for (int k = 0; k < i; ++k)
+	 	for (int k = i; k < size; ++k)
 	 	{
-	 		qf += pow((k - mf), 2) *  image_histogram[k];
+	 		// qf += pow((k - mf), 2) *  image_histogram[k] / forground_pixels;
+	 		qf2 += pow((k - mf), 2) *  image_histogram[k] / forground_pixels;
 	 	}
-	 	qf2 = qf / forground_pixels;
+	 	// qf2 = qf / forground_pixels;
 		std::cout << "Wf: " << Wf << "\t";
 		std::cout << "forground_pixels: " << forground_pixels << "\t";
 		std::cout << "mf: " << mf << "\t";
-		std::cout << "qf: " << qf << "\t";
 		std::cout << "qf2: " << qf2 << "\t";
 
-		std::cout << "q2W: " <<  (Wb * qb2) + (Wf * qf2) << "\t";
+		q2W = (Wb * qb2) + (Wf * qf2);
+		std::cout << "\n" << "q2W: " <<  q2W << "\t";
 		 
-	 	if (interClassVar < (Wb * qb2) + (Wf * qf2) ) 
-	 	{
-	 		interClassVar = (Wb * qb2) + (Wf * qf2);
-	 		if (interClassVar < 0.5)
-	 		{
-	 			treashold = i;
-	 		}	
-	 	}   
+ 		if (q2W < 0.5)
+ 		{
+ 			treashold = i;
+ 		}	
 
 	 	// set to 0
-	 	qb = 0;
+	 	qb2 = 0;
 	 	mb = 0;
-	 	qf = 0;
+	 	qf2 = 0;
 	 	mf = 0;
 
 		background_pixels = 1;
@@ -176,8 +211,8 @@ QImage createOtsuImg(QImage image )
 	fillinGrayImageimgagearray(image_imgagearray, image);
 	int image_histogram[255];
 	fillinImageHistogram(image_histogram, 255, image_imgagearray, image.width() * image.height());	
-	int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
-
+	// int otsu_threshold = calculateOtsuTreashold(image_histogram, 255, image.width() * image.height()); 
+	int otsu_threshold = calculateOtsuTreashold2(image_histogram, 255, image.width() * image.height());
 
 	for (int i = 0; i < image.height(); i ++)
 	{
@@ -187,8 +222,8 @@ QImage createOtsuImg(QImage image )
 			
 			/*calculate otsu value at this index*/
 			QRgb valueOtsuGrey;
-			// int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold ) ? BLACK : WHITE;
-			int otsuValue = image_imgagearray[imgarray_indx];
+			int otsuValue = (image_imgagearray[imgarray_indx] > otsu_threshold ) ? BLACK : WHITE;
+			// int otsuValue = image_imgagearray[imgarray_indx];
 
 			valueOtsuGrey = qRgb(otsuValue, otsuValue, otsuValue);
 			imageOtsu.setPixel(j, i, valueOtsuGrey);
