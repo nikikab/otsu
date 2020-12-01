@@ -28,19 +28,10 @@ void fillinGrayImageimgagearray(int* arr, QImage image)
 
 	for (int i = 0; i < image.height(); i ++)
 	{
-		// QRgb* pnt_row = (QRgb*)image.scanLine(i);
 		for (int j = 0; j < image.width(); j++)
 		{
 
-			// QRgb pixel = pnt_row[j];
 			QRgb pixel = image.pixel(j, i);
-			// int red = qRed(pixel);
-			// int green = qGreen(pixel);
-			// int blue = qBlue(pixel);
-
-			// int gray = 0.2989 * red + 0.5870 * green + 0.1140 * blue;			
-			// std::cout << image.width() * i + j << ":\t\t" << qGray(pixel) << "\t" << gray << "\n";
-			// arr[ image.width() * i + j ] = qGray(pixel); 
 			arr[ image.width() * i + j ] = qGray(pixel); 
 		}
 	}
@@ -74,40 +65,6 @@ void fillinImageHistogram(int* image_histogram, int histo_size,int*  image_imgag
 	printarray(image_histogram, 250);
 }
 
-int calculateOtsuTreashold2(int* histogram, int size, int totals)
-{
-	int q1, q2;
-	int sum, sumB;
-	double m1, m2;
-	double th2b;
-
-	int threshold;
-	 
-	for (int i = 0; i < 255; ++i)
-	{
-		sum += i * histogram[i];
-	}
-
-	for (int t = 0; t < 255; ++t)
-	{
-		q1 += histogram[t];
-		q2 = totals - q1;
-
-		sumB += t * histogram[t];
-		m1 = sumB / q1;
-		m2 = (sum - sumB) / q2;
-		th2b = q1 *q2 * pow((m1 - m2), 2);
-
-		std::cout << "th2b: " << (double) th2b << "\n"; 
-		if (th2b < 0.5)
-		{
-			threshold = t;
-		}
-
-	}
-
-	return threshold;
-}
 
 int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 {
@@ -151,10 +108,8 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 	mb = background_pixels_multiplied_by_weight / Wb;
 	 	for (int j = 0; j < i; ++j)
 	 	{
-	 		// qb += pow((j - mb), 2) *  image_histogram[j];
 	 		qb2 += pow((j - mb), 2) *  image_histogram[j] / Wb;
 	 	}
-	 	// qb2 = qb / background_pixels;
 		std::cout << "Wb: " << Wb << "\t\t";
 		std::cout << "backg_pxls: " << background_pixels << "\t\t";
 		std::cout << "mb: " << mb << "\t\t";
@@ -172,17 +127,14 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 	 	mf = forground_pixels_multiplied_by_weight / Wf;
 	 	for (int k = i; k < size; ++k)
 	 	{
-	 		// qf += pow((k - mf), 2) *  image_histogram[k] / forground_pixels;
 	 		qf2 += pow((k - mf), 2) *  image_histogram[k] / Wf;
 	 	}
-	 	// qf2 = qf / forground_pixels;
+
 		std::cout << "Wf: " << Wf << "\t\t";
 		std::cout << "forg_pxls: " << forground_pixels << "\t\t";
 		std::cout << "mf: " << mf << "\t\t";
 		std::cout << "qf2: " << qf2 << "\t\t";
 
-		// q2W = (Wb * qb2) + (Wf * qf2);
-		// std::cout << "\n" << "q2W: " <<  q2W << "\t";
 
 		sigma2b = Wb * Wf * pow((mb - mf), 2);
 		if (sigma2b_tem < sigma2b)
@@ -191,10 +143,6 @@ int calculateOtsuTreashold(int* image_histogram, int size, int totals)
 			i_maxsigma = i;
 		}
 		std::cout << "\n" << "sigma2b_tem: " <<  sigma2b_tem << ";\t" << "i_maxsigma: " << i_maxsigma;
- 		// if (q2W < 0.5)
- 		// {
- 		// 	treashold = i;
- 		// }	
 
 	 	// set to 0
 	 	qb2 = 0;
